@@ -1,0 +1,97 @@
+project:
+  key: TEMP
+  name: Email Template System
+  lead: ${project_lead}
+  description: Email template system for standardized business communications
+
+board:
+  name: Email Template Board
+  type: scrum
+  columns:
+    - name: To Do
+      status: todo
+      wip_limit: 10
+    - name: In Progress
+      status: in_progress
+      wip_limit: 5
+    - name: Code Review
+      status: review
+      wip_limit: 3
+    - name: Testing
+      status: testing
+      wip_limit: 3
+    - name: Done
+      status: done
+
+sprints:
+  - name: Sprint 1
+    goal: Core Template System Implementation
+    start_date: ${current_date}
+    end_date: ${current_date + 14 days}
+    stories:
+      - TEMP-2
+      - TEMP-3
+    story_points: 13
+    team_capacity: 15
+
+  - name: Sprint 2
+    goal: Template Enhancement and Business Features
+    start_date: ${sprint1_end + 1 day}
+    end_date: ${sprint1_end + 15 days}
+    stories:
+      - TEMP-4
+      - TEMP-5
+      - TEMP-6
+    story_points: 21
+    team_capacity: 25
+
+team:
+  velocity: 20
+  members:
+    - role: Tech Lead
+      allocation: 100%
+    - role: Developer
+      allocation: 100%
+    - role: Developer
+      allocation: 100%
+    - role: QA Engineer
+      allocation: 50%
+
+estimation_guidelines:
+  1: Trivial change, < 2 hours
+  2: Simple task, half day
+  3: Standard task, 1 day
+  5: Complex task, 2-3 days
+  8: Very complex task, 3-5 days
+  13: Major feature, 1-2 weeks
+
+ceremonies:
+  sprint_planning:
+    duration: 2h
+    frequency: Every 2 weeks
+    
+  daily_standup:
+    duration: 15m
+    frequency: Daily
+    time: 10:00 AM
+    
+  sprint_review:
+    duration: 1h
+    frequency: Every 2 weeks
+    
+  sprint_retrospective:
+    duration: 1h
+    frequency: Every 2 weeks
+
+metrics:
+  velocity:
+    initial: 20
+    target: 25
+    
+  quality:
+    code_coverage: 80%
+    bug_escape_rate: <10%
+    
+  delivery:
+    cycle_time: <5 days
+    lead_time: <10 days

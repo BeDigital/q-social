@@ -1,0 +1,80 @@
+schema_version: 1
+name: Git Workflow Standards
+description: Standards for branch naming, commit practices, and merge workflow
+rules:
+  branch_naming:
+    pattern: ^(feature|bugfix|hotfix|release)\/[a-z0-9-]+$
+    examples:
+      - feature/user-authentication
+      - bugfix/login-error
+      - hotfix/security-patch
+      - release/v1.2.0
+    message: "Branch names must follow the pattern: {type}/{description} where type is feature, bugfix, hotfix, or release"
+
+  commit_message:
+    pattern: ^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?: .{1,72}$
+    examples:
+      - "feat(auth): implement OAuth2 authentication"
+      - "fix(api): resolve null pointer in user service"
+      - "docs: update API documentation"
+    message: "Commit messages must follow conventional commits format"
+
+  merge_workflow:
+    steps:
+      - Ensure branch is up to date with main/master
+      - Run all tests locally
+      - Create pull request
+      - Address review comments
+      - Squash commits if needed
+      - Merge only after CI passes and approvals received
+
+actions:
+  pre_commit:
+    - git fetch origin
+    - git rebase origin/main
+    - run tests
+    - lint code
+
+  create_branch:
+    - git checkout -b {branch_type}/{branch_name} main
+    
+  prepare_merge:
+    - git fetch origin
+    - git rebase origin/main
+    - run full test suite
+    
+  cleanup:
+    - git checkout main
+    - git pull origin main
+    - git branch -d {branch_name}
+
+validations:
+  branch_name:
+    - Validate against branch naming pattern
+    - Check for duplicate branch names
+    
+  commit:
+    - Verify commit message format
+    - Check for sensitive data
+    - Ensure tests pass
+    
+  merge:
+    - Verify branch is up to date
+    - Check all required reviews are complete
+    - Ensure CI/CD pipeline passes
+    - Validate no merge conflicts
+
+notifications:
+  pull_request:
+    - Notify team on PR creation
+    - Alert on CI/CD failures
+    - Remind reviewers after 24 hours
+
+best_practices:
+  - Keep branches short-lived
+  - Regularly sync with main branch
+  - Write descriptive commit messages
+  - Include tests with changes
+  - Review code before requesting reviews
+  - Address all review comments
+  - Delete branches after merging

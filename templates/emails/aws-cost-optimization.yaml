@@ -1,0 +1,69 @@
+template:
+  name: aws-cost-optimization
+  type: email
+  version: 1.0.0
+  category: business
+  style: casual
+
+metadata:
+  subject: AWS Infrastructure Cost Optimization Summary
+  sender: ${sender_name}
+  recipient: brian.uckert@be-digial.biz
+
+content:
+  greeting: Hi Brian,
+  
+  opening_paragraph: |
+    I hope this finds you well. I wanted to share the results of our recent AWS infrastructure 
+    cost analysis for the task management application.
+
+  main_content: |
+    We've identified an opportunity to reduce our monthly AWS spending from $702 to $302, 
+    resulting in potential annual savings of $4,800. Here's the quick breakdown:
+
+  cost_breakdown:
+    title: Current vs. Optimized Monthly Costs
+    items:
+      - Computing: $245 → $145
+      - Database: $186 → $116
+      - Data Transfer: $184 → $124
+      - Other Services: $87 → $67
+
+  benefits:
+    intro: |
+      The good news is we can achieve these savings without compromising performance or functionality. 
+      The optimization plan requires:
+    items:
+      - No upfront costs
+      - 1-2 months implementation timeline
+      - Maintains all current capabilities
+
+  call_to_action: Would you like to schedule a brief meeting to discuss the implementation details?
+
+  closing:
+    salutation: Best regards,
+    signature: ${sender_name}
+
+styling:
+  format: business_casual
+  paragraphs:
+    spacing: single
+  lists:
+    style: bullet
+    indent: 2
+
+variables:
+  required:
+    - sender_name
+  optional:
+    - sender_title
+    - sender_department
+
+validation:
+  rules:
+    - field: sender_name
+      required: true
+      min_length: 2
+    - field: recipient_email
+      format: email
+      required: true

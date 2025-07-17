@@ -1,0 +1,139 @@
+schema_version: 1
+name: Code Documentation Standards
+description: Standards for code comments, documentation, and README files
+rules:
+  file_header:
+    required: true
+    format: |
+      /**
+       * @file {filename}
+       * @description Brief description of the file's purpose
+       * @author {author}
+       * @created {date}
+       * @lastModified {date}
+       */
+    message: "Each file must include a header comment block with description and metadata"
+
+  function_documentation:
+    required: true
+    format: |
+      /**
+       * @function {functionName}
+       * @description What the function does
+       * @param {parameterType} parameterName - Parameter description
+       * @returns {returnType} Description of return value
+       * @throws {errorType} Description of potential errors
+       */
+    message: "All functions must have JSDoc-style documentation"
+
+  inline_comments:
+    rules:
+      - Single-line comments for brief explanations
+      - Multi-line comments for complex logic
+      - Comments should explain why, not what
+      - Keep comments up to date with code changes
+    format:
+      single_line: "// Comment"
+      multi_line: |
+        /*
+         * Multi-line comment
+         * for complex explanations
+         */
+
+  readme_requirements:
+    sections:
+      - title: Project Name
+        required: true
+        content: "Clear, descriptive project name"
+      
+      - title: Overview
+        required: true
+        content: "Brief description of project purpose and functionality"
+      
+      - title: Dependencies
+        required: true
+        content: |
+          - List all external dependencies
+          - Include version requirements
+          - Explain why each dependency is needed
+      
+      - title: Installation
+        required: true
+        content: "Step-by-step installation instructions"
+      
+      - title: Configuration
+        required: true
+        content: "Environment variables and configuration options"
+      
+      - title: Usage
+        required: true
+        content: "Examples and instructions for using the code"
+      
+      - title: API Documentation
+        required: false
+        content: "If applicable, document API endpoints"
+      
+      - title: Testing
+        required: true
+        content: "Instructions for running tests"
+      
+      - title: Contributing
+        required: true
+        content: "Guidelines for contributing to the project"
+
+actions:
+  generate_readme:
+    template: |
+      # {projectName}
+      
+      ## Overview
+      {projectDescription}
+      
+      ## Dependencies
+      {dependenciesList}
+      
+      ## Installation
+      {installationSteps}
+      
+      ## Configuration
+      {configurationDetails}
+      
+      ## Usage
+      {usageExamples}
+      
+      ## Testing
+      {testingInstructions}
+      
+      ## Contributing
+      {contributingGuidelines}
+
+  update_documentation:
+    - Scan for undocumented functions
+    - Verify comment format compliance
+    - Check README completeness
+    - Generate API documentation if needed
+
+validations:
+  comments:
+    - Check for missing function documentation
+    - Verify comment format compliance
+    - Ensure comments are meaningful
+    - Check for outdated comments
+    
+  readme:
+    - Verify all required sections exist
+    - Check for broken links
+    - Validate code examples
+    - Ensure dependency list is current
+
+best_practices:
+  - Write comments as you code
+  - Keep comments concise and clear
+  - Update documentation when changing code
+  - Use consistent documentation style
+  - Include examples in documentation
+  - Document assumptions and limitations
+  - Keep README up to date
+  - Document error handling and edge cases
+  - Use meaningful variable and function names
+  - Include troubleshooting guides for common issues
