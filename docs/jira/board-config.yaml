@@ -1,97 +1,207 @@
 project:
-  key: TEMP
-  name: Email Template System
+  key: QSOC
+  name: Q-Social Platform
   lead: ${project_lead}
-  description: Email template system for standardized business communications
+  description: Social media platform with modern features and security focus
 
 board:
-  name: Email Template Board
+  name: Q-Social Development Board
   type: scrum
   columns:
+    - name: Backlog
+      status: backlog
     - name: To Do
       status: todo
-      wip_limit: 10
+      wip_limit: 15
     - name: In Progress
       status: in_progress
-      wip_limit: 5
+      wip_limit: 10
     - name: Code Review
       status: review
-      wip_limit: 3
-    - name: Testing
+      wip_limit: 5
+    - name: QA
       status: testing
-      wip_limit: 3
+      wip_limit: 5
     - name: Done
       status: done
 
 sprints:
-  - name: Sprint 1
-    goal: Core Template System Implementation
+  - name: Sprint 1 - Foundation
+    goal: Core Infrastructure and Authentication
     start_date: ${current_date}
     end_date: ${current_date + 14 days}
     stories:
-      - TEMP-2
-      - TEMP-3
-    story_points: 13
-    team_capacity: 15
+      - QSOC-101
+      - QSOC-102
+      - QSOC-103
+      - QSOC-104
+    story_points: 34
+    team_capacity: 40
 
-  - name: Sprint 2
-    goal: Template Enhancement and Business Features
+  - name: Sprint 2 - User Management
+    goal: User Features and Security
     start_date: ${sprint1_end + 1 day}
     end_date: ${sprint1_end + 15 days}
     stories:
-      - TEMP-4
-      - TEMP-5
-      - TEMP-6
-    story_points: 21
-    team_capacity: 25
+      - QSOC-201
+      - QSOC-202
+      - QSOC-203
+      - QSOC-204
+    story_points: 34
+    team_capacity: 40
+
+  - name: Sprint 3 - Content Management
+    goal: Post Creation and Management
+    stories:
+      - QSOC-301
+      - QSOC-302
+      - QSOC-303
+      - QSOC-304
+    story_points: 34
+    team_capacity: 40
+
+  - name: Sprint 4 - Social Features
+    goal: Social Interaction Implementation
+    stories:
+      - QSOC-401
+      - QSOC-402
+      - QSOC-403
+      - QSOC-404
+    story_points: 34
+    team_capacity: 40
+
+  - name: Sprint 5 - Search & Discovery
+    goal: Search and Performance
+    stories:
+      - QSOC-501
+      - QSOC-502
+      - QSOC-503
+      - QSOC-504
+    story_points: 34
+    team_capacity: 40
 
 team:
-  velocity: 20
-  members:
-    - role: Tech Lead
-      allocation: 100%
-    - role: Developer
-      allocation: 100%
-    - role: Developer
-      allocation: 100%
-    - role: QA Engineer
-      allocation: 50%
+  roles:
+    - role: Frontend Developer
+      count: 2
+      skills:
+        - React
+        - TypeScript
+        - CSS
+        - Testing
+    - role: Backend Developer
+      count: 2
+      skills:
+        - Node.js
+        - TypeScript
+        - AWS
+        - Database
+    - role: DevOps Engineer
+      count: 1
+      skills:
+        - AWS
+        - CI/CD
+        - Infrastructure
+        - Monitoring
 
-estimation_guidelines:
-  1: Trivial change, < 2 hours
-  2: Simple task, half day
-  3: Standard task, 1 day
-  5: Complex task, 2-3 days
-  8: Very complex task, 3-5 days
-  13: Major feature, 1-2 weeks
+velocity:
+  initial: 34
+  target: 40
+  history:
+    - sprint: 1
+      planned: 34
+      completed: 0
+    - sprint: 2
+      planned: 34
+      completed: 0
+    - sprint: 3
+      planned: 34
+      completed: 0
+    - sprint: 4
+      planned: 34
+      completed: 0
+    - sprint: 5
+      planned: 34
+      completed: 0
 
 ceremonies:
   sprint_planning:
     duration: 2h
-    frequency: Every 2 weeks
+    day: Monday
+    time: "10:00"
     
   daily_standup:
     duration: 15m
-    frequency: Daily
-    time: 10:00 AM
+    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
+    time: "10:00"
     
   sprint_review:
     duration: 1h
-    frequency: Every 2 weeks
+    day: Friday
+    time: "14:00"
     
   sprint_retrospective:
     duration: 1h
-    frequency: Every 2 weeks
+    day: Friday
+    time: "15:00"
+
+  backlog_grooming:
+    duration: 1h
+    day: Wednesday
+    time: "14:00"
 
 metrics:
   velocity:
-    initial: 20
-    target: 25
+    target: 34
+    variance_threshold: 20%
     
   quality:
     code_coverage: 80%
     bug_escape_rate: <10%
+    technical_debt: <20%
     
   delivery:
     cycle_time: <5 days
     lead_time: <10 days
+    deployment_frequency: daily
+    change_failure_rate: <15%
+
+labels:
+  priority:
+    - Highest
+    - High
+    - Medium
+    - Low
+    
+  components:
+    - Frontend
+    - Backend
+    - Infrastructure
+    - Security
+    - Testing
+    
+  types:
+    - Feature
+    - Bug
+    - Technical Debt
+    - Security
+    - Performance
+
+automation_rules:
+  - name: Auto-assign to sprint
+    trigger: issue_created
+    conditions:
+      - field: priority
+        value: Highest
+    actions:
+      - add_to_sprint: current
+      
+  - name: Update status on PR
+    trigger: pr_created
+    actions:
+      - update_status: In Review
+      
+  - name: Auto-link related issues
+    trigger: issue_updated
+    actions:
+      - link_related_issues
