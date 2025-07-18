@@ -1,0 +1,133 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "Q-Social/WAF", "BlockedRequests", { "stat": "Sum", "period": 300 } ],
+                    [ ".", "AllowedRequests", { "stat": "Sum", "period": 300 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "WAF Request Statistics",
+                "period": 300
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "Q-Social/WAF", "GeoBlockedRequests", { "stat": "Sum", "period": 300 } ],
+                    [ ".", "RateLimitedRequests", { "stat": "Sum", "period": 300 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "Security Block Types",
+                "period": 300
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "Q-Social/Monitoring", "ResponseTime", { "stat": "Average", "period": 60 } ],
+                    [ ".", "ResponseTime", { "stat": "p90", "period": 60 } ],
+                    [ ".", "ResponseTime", { "stat": "p99", "period": 60 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "API Response Times",
+                "period": 60
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": true,
+                "metrics": [
+                    [ "Q-Social/Monitoring", "StatusCode_2XX", { "stat": "Sum", "period": 60 } ],
+                    [ ".", "StatusCode_4XX", { "stat": "Sum", "period": 60 } ],
+                    [ ".", "StatusCode_5XX", { "stat": "Sum", "period": 60 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "HTTP Status Codes",
+                "period": 60
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "view": "pie",
+                "metrics": [
+                    [ "Q-Social/WAF", "GeoBlockedRequests", { "stat": "Sum", "period": 3600 } ],
+                    [ ".", "RateLimitedRequests", { "stat": "Sum", "period": 3600 } ],
+                    [ ".", "CoreSecurityBlocks", { "stat": "Sum", "period": 3600 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "Security Block Distribution",
+                "period": 3600
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "view": "singleValue",
+                "metrics": [
+                    [ "Q-Social/Monitoring", "RequestCount", { "stat": "Sum", "period": 300 } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "Total Requests (5min)",
+                "period": 300
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "view": "singleValue",
+                "metrics": [
+                    [ "Q-Social/WAF", "BlockRate", { 
+                        "stat": "Average",
+                        "period": 300,
+                        "expression": "blocked / total * 100",
+                        "label": "Block Rate (%)"
+                    } ]
+                ],
+                "region": "${AWS_REGION}",
+                "title": "Security Block Rate",
+                "period": 300
+            }
+        }
+    ]
+}
