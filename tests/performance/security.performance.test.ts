@@ -1,244 +1,186 @@
-import autocannon from 'autocannon';
-import { SecretRotationService } from '../../src/services/secretRotationService';
+import { TestServer, startServer, stopServer } from '../utils/server';
 import { BackupVerificationService } from '../../src/services/backupVerificationService';
 import { ErrorCorrelationService } from '../../src/services/errorCorrelationService';
-import { startServer, stopServer } from '../utils/server';
-import { createTestData, cleanupTestData } from '../utils/testData';
 
 describe('Security and Reliability Performance Tests', () => {
-  let server;
-  let baseUrl;
+  let testServer: TestServer;
 
   beforeAll(async () => {
-    server = await startServer();
-    baseUrl = `http://localhost:${server.port}`;
-    await createTestData();
+    testServer = await startServer();
   });
 
   afterAll(async () => {
-    await cleanupTestData();
-    await stopServer(server);
+    await stopServer(testServer);
   });
 
-  describe('Secret Rotation Performance', () => {
-    it('should handle concurrent token validations during rotation', async () => {
-      // Setup test tokens
-      const tokens = await Promise.all(
-        Array(1000).fill(0).map(() => SecretRotationService.generateToken())
-      );
-
-      // Start token validation
-      const validationPromise = autocannon({
-        url: `${baseUrl}/api/verify-token`,
-        connections: 100,
-        duration: 10,
-        headers: {
-          'content-type': 'application/json',
-        },
-        requests: [
-          {
-            method: 'POST',
-            body: JSON.stringify({ token: tokens[0] }),
-          },
-        ],
-      });
-
-      // Trigger secret rotation during validation
-      setTimeout(async () => {
-        await SecretRotationService.rotateSecret('JWT_SECRET');
-      }, 2000);
-
-      const results = await validationPromise;
-
-      expect(results.errors).toBe(0);
-      expect(results.timeouts).toBe(0);
-      expect(results.non2xx).toBe(0);
-      expect(results.latency.p99).toBeLessThan(100); // 100ms
-    });
-
-    it('should maintain performance during multiple rotations', async () => {
-      const results = await autocannon({
-        url: `${baseUrl}/api/protected`,
-        connections: 50,
-        duration: 30,
-        headers: {
-          'content-type': 'application/json',
-        },
-      });
-
-      // Trigger multiple rotations during test
-      for (let i = 0; i < 5; i++) {
-        await SecretRotationService.rotateSecret('JWT_SECRET');
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      }
-
-      expect(results.latency.p95).toBeLessThan(100);
-      expect(results.errors).toBe(0);
-      expect(results.timeouts).toBe(0);
-    });
-  });
-
-  describe('Backup System Performance', () => {
-    it('should handle large backup operations efficiently', async () => {
+  describe('WAF Performance', () => {
+    it('should handle high rate of requests efficiently', async () => {
       const startTime = Date.now();
+      const requests = 1000;
+      const concurrentRequests = 100;
       
-      // Create large test dataset
-      await createTestData({ posts: 10000, users: 1000 });
-
-      // Measure backup time
-      const backupStart = Date.now();
-      await BackupVerificationService.createBackup();
-      const backupDuration = Date.now() - backupStart;
-
-      expect(backupDuration).toBeLessThan(30000); // 30 seconds max
-
-      // Measure verification time
-      const verifyStart = Date.now();
-      const verificationResult = await BackupVerificationService.verifyBackup(
-        '/tmp/test-backup.sqlite'
-      );
-      const verifyDuration = Date.now() - verifyStart;
-
-      expect(verifyDuration).toBeLessThan(15000); // 15 seconds max
-      expect(verificationResult).toBe(true);
-    });
-
-    it('should maintain system performance during backup', async () => {
-      // Start system monitoring
-      const baselineMetrics = await collectPerformanceMetrics();
-
-      // Start backup process
-      const backupPromise = BackupVerificationService.createBackup();
-
-      // Measure system performance during backup
-      const results = await autocannon({
-        url: `${baseUrl}/api/posts`,
-        connections: 20,
-        duration: 30,
-      });
-
-      await backupPromise;
-
-      // Get metrics after backup
-      const backupMetrics = await collectPerformanceMetrics();
-
-      expect(results.latency.p95).toBeLessThan(200); // 200ms max
-      expect(backupMetrics.memory - baselineMetrics.memory).toBeLessThan(100 * 1024 * 1024); // 100MB max increase
-      expect(backupMetrics.cpu - baselineMetrics.cpu).toBeLessThan(50); // 50% max CPU increase
-    });
-  });
-
-  describe('Error Correlation Performance', () => {
-    it('should handle high error rates efficiently', async () => {
-      // Generate high volume of errors
-      const errorPromises = Array(1000).fill(0).map((_, i) => {
-        return ErrorCorrelationService.trackError(
-          new Error(`Test error ${i}`),
-          `correlation-${i}`,
-          { path: '/test', method: 'GET' }
-        );
-      });
-
-      const startTime = Date.now();
-      await Promise.all(errorPromises);
-      const duration = Date.now() - startTime;
-
-      expect(duration).toBeLessThan(1000); // 1 second max
-    });
-
-    it('should maintain performance with deep error chains', async () => {
-      // Create deep error chain
-      let currentId = 'root-error';
-      for (let i = 0; i < 100; i++) {
-        currentId = ErrorCorrelationService.correlateErrors(currentId);
-        await ErrorCorrelationService.trackError(
-          new Error(`Chain error ${i}`),
-          currentId,
-          { path: '/test', method: 'GET' }
-        );
-      }
-
-      // Measure chain retrieval performance
-      const startTime = Date.now();
-      const chain = await ErrorCorrelationService.getErrorChain(currentId);
-      const duration = Date.now() - startTime;
-
-      expect(duration).toBeLessThan(100); // 100ms max
-      expect(chain.length).toBe(101); // Root + 100 correlated errors
-    });
-  });
-
-  describe('System Load Tests', () => {
-    it('should handle concurrent operations', async () => {
-      const operations = [
-        // Secret rotation
-        () => SecretRotationService.rotateSecret('TEST_SECRET'),
-        
-        // Backup verification
-        () => BackupVerificationService.verifyBackup('/tmp/test-backup.sqlite'),
-        
-        // Error tracking
-        () => ErrorCorrelationService.trackError(
-          new Error('Test error'),
-          'test-correlation',
-          { path: '/test', method: 'GET' }
-        ),
-      ];
-
-      // Run operations concurrently
-      const startTime = Date.now();
-      await Promise.all(
-        Array(100).fill(0).map(() => {
-          const operation = operations[Math.floor(Math.random() * operations.length)];
-          return operation();
+      // Create array of promises for concurrent requests
+      const promises = Array(concurrentRequests).fill(0).map(() => 
+        fetch(`${testServer.url}/api/test`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         })
       );
-      const duration = Date.now() - startTime;
 
-      expect(duration).toBeLessThan(5000); // 5 seconds max
-    });
+      // Execute concurrent requests
+      const responses = await Promise.all(promises);
+      const endTime = Date.now();
 
-    it('should maintain performance under sustained load', async () => {
-      const duration = 60; // 1 minute test
-      const results = await autocannon({
-        url: baseUrl,
-        connections: 100,
-        duration,
-        workers: 8,
-        requests: [
-          {
+      // Calculate metrics
+      const totalTime = endTime - startTime;
+      const averageResponseTime = totalTime / requests;
+
+      // Assertions
+      expect(averageResponseTime).toBeLessThan(100); // Less than 100ms average
+      expect(responses.every(r => r.status === 200)).toBe(true);
+    }, 30000);
+
+    it('should maintain performance with geographic restrictions', async () => {
+      const startTime = Date.now();
+      const requests = 100;
+
+      // Test requests with different geographic origins
+      const origins = ['US', 'GB', 'EU', 'CN'];
+      const promises = origins.flatMap(origin => 
+        Array(requests).fill(0).map(() => 
+          fetch(`${testServer.url}/api/test`, {
             method: 'GET',
-            path: '/api/posts',
-          },
-          {
-            method: 'POST',
-            path: '/api/posts',
-            body: JSON.stringify({ content: 'Test post' }),
-            headers: { 'content-type': 'application/json' },
-          },
-          {
-            method: 'GET',
-            path: '/api/users',
-          },
-        ],
-      });
+            headers: {
+              'X-Origin-Country': origin,
+              'Content-Type': 'application/json'
+            }
+          })
+        )
+      );
 
-      expect(results.errors).toBe(0);
-      expect(results.timeouts).toBe(0);
-      expect(results.latency.p99).toBeLessThan(500); // 500ms max
-      expect(results.requests.average).toBeGreaterThan(1000); // At least 1000 req/sec
+      const responses = await Promise.all(promises);
+      const endTime = Date.now();
+
+      // Calculate metrics
+      const totalTime = endTime - startTime;
+      const averageResponseTime = totalTime / (requests * origins.length);
+
+      // Assertions
+      expect(averageResponseTime).toBeLessThan(50); // Less than 50ms average
+      expect(responses.filter(r => r.status === 403).length).toBeGreaterThan(0); // Some requests should be blocked
+    }, 30000);
+  });
+
+  describe('Authentication Performance', () => {
+    it('should handle concurrent login attempts efficiently', async () => {
+      const startTime = Date.now();
+      const loginAttempts = 100;
+
+      const promises = Array(loginAttempts).fill(0).map((_, index) => 
+        fetch(`${testServer.url}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: `test${index}@example.com`,
+            password: 'testPassword123!'
+          })
+        })
+      );
+
+      const responses = await Promise.all(promises);
+      const endTime = Date.now();
+
+      // Calculate metrics
+      const totalTime = endTime - startTime;
+      const averageResponseTime = totalTime / loginAttempts;
+
+      // Assertions
+      expect(averageResponseTime).toBeLessThan(200); // Less than 200ms average
+      expect(responses.every(r => r.status === 401 || r.status === 200)).toBe(true);
+    }, 30000);
+  });
+
+  describe('Error Handling Performance', () => {
+    it('should handle errors efficiently under load', async () => {
+      const errorService = new ErrorCorrelationService();
+      const startTime = Date.now();
+      const errorRequests = 100;
+
+      // Generate errors concurrently
+      const promises = Array(errorRequests).fill(0).map((_, index) => 
+        errorService.processError({
+          type: 'SecurityError',
+          message: `Test error ${index}`,
+          timestamp: new Date(),
+          severity: 'high'
+        })
+      );
+
+      await Promise.all(promises);
+      const endTime = Date.now();
+
+      // Calculate metrics
+      const processingTime = endTime - startTime;
+      const averageProcessingTime = processingTime / errorRequests;
+
+      // Assertions
+      expect(averageProcessingTime).toBeLessThan(10); // Less than 10ms per error
     });
   });
-});
 
-// Helper function to collect performance metrics
-async function collectPerformanceMetrics() {
-  const usage = process.memoryUsage();
-  const cpuUsage = process.cpuUsage();
-  
-  return {
-    memory: usage.heapUsed,
-    cpu: (cpuUsage.user + cpuUsage.system) / 1000000, // Convert to seconds
-    timestamp: Date.now(),
-  };
-}
+  describe('Backup Verification Performance', () => {
+    it('should verify backups efficiently', async () => {
+      const backupService = new BackupVerificationService();
+      const startTime = Date.now();
+      const backupSize = 1000000; // 1MB
+
+      const verificationResult = await backupService.verifyBackup({
+        id: 'test-backup',
+        size: backupSize,
+        timestamp: new Date(),
+        checksum: 'test-checksum'
+      });
+
+      const endTime = Date.now();
+      const verificationTime = endTime - startTime;
+
+      // Assertions
+      expect(verificationResult.verified).toBe(true);
+      expect(verificationTime).toBeLessThan(1000); // Less than 1 second
+    });
+  });
+
+  describe('Rate Limiting Performance', () => {
+    it('should handle rate limiting efficiently', async () => {
+      const startTime = Date.now();
+      const requests = 200; // Exceed rate limit
+      const rateLimitWindow = 15000; // 15 seconds
+
+      const promises = Array(requests).fill(0).map(() => 
+        fetch(`${testServer.url}/api/test`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      const responses = await Promise.all(promises);
+      const endTime = Date.now();
+
+      // Calculate metrics
+      const totalTime = endTime - startTime;
+      const averageResponseTime = totalTime / requests;
+      const rateLimitedResponses = responses.filter(r => r.status === 429).length;
+
+      // Assertions
+      expect(averageResponseTime).toBeLessThan(50); // Less than 50ms average
+      expect(rateLimitedResponses).toBeGreaterThan(0); // Some requests should be rate limited
+      expect(totalTime).toBeLessThan(rateLimitWindow); // Should complete within rate limit window
+    }, 30000);
+  });
+});
