@@ -1,0 +1,51 @@
+# Q-Social Phase 1 Essential WAF Configuration
+
+WebACL:
+  Name: q-social-essential-waf
+  Description: Essential WAF rules for Q-Social platform
+  Scope: REGIONAL
+  DefaultAction: ALLOW
+
+Rules:
+  # Geographic Access Control - Phase 1 (US Only)
+  - Name: GeoRestriction
+    Priority: 100
+    Action: BLOCK
+    Statement:
+      NotGeoMatchStatement:
+        CountryCodes:
+          - US
+    OverrideAction: NONE
+    VisibilityConfig:
+      SampledRequestsEnabled: true
+      CloudWatchMetricsEnabled: true
+      MetricName: GeoBlockedRequests
+
+  # Rate Limiting - Basic Protection
+  - Name: RateLimiting
+    Priority: 200
+    Action: BLOCK
+    Statement:
+      RateBasedStatement:
+        AggregateKeyType: IP
+        Limit: 2000
+    OverrideAction: NONE
+    VisibilityConfig:
+      SampledRequestsEnabled: true
+      CloudWatchMetricsEnabled: true
+      MetricName: RateLimitedRequests
+
+  # Core Security Rules
+  - Name: CoreSecurityRules
+    Priority: 300
+    Action: BLOCK
+    Statement:
+      ManagedRuleGroupStatement:
+        VendorName: AWS
+        Name: AWSManagedRulesCommonRuleSet
+        ExcludedRules: []
+    OverrideAction: NONE
+    VisibilityConfig:
+      SampledRequestsEnabled: true
+      CloudWatchMetricsEnabled: true
+      MetricName: CoreSecurityBlocks
