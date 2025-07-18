@@ -1,0 +1,210 @@
+# Q-Social Environment Deployment Configuration
+
+DeploymentPipelines:
+  Integration:
+    Trigger:
+      - Branch: feature/*
+      - PullRequest: true
+    PreDeployment:
+      - UnitTests
+      - IntegrationTests
+      - SecurityScan:
+          Level: basic
+      - DependencyCheck
+    Deployment:
+      Strategy: RollingUpdate
+      HealthCheck:
+        Path: /health
+        Interval: 30
+        Timeout: 5
+        HealthyThreshold: 2
+        UnhealthyThreshold: 3
+    PostDeployment:
+      - SmokeTests
+      - APITests
+      - PerformanceCheck:
+          Level: basic
+
+  QA_Staging:
+    Trigger:
+      - Branch: develop
+      - ManualApproval: true
+    PreDeployment:
+      - UnitTests
+      - IntegrationTests
+      - SecurityScan:
+          Level: comprehensive
+      - DependencyCheck
+      - LoadTest:
+          Duration: 10m
+          Users: 100
+    Deployment:
+      Strategy: BlueGreen
+      HealthCheck:
+        Path: /health
+        Interval: 20
+        Timeout: 5
+        HealthyThreshold: 3
+        UnhealthyThreshold: 2
+    PostDeployment:
+      - SmokeTests
+      - E2ETests
+      - SecurityTests
+      - PerformanceTests:
+          Level: comprehensive
+
+  Production:
+    Trigger:
+      - Branch: main
+      - ManualApproval: true
+      - SecurityApproval: true
+    PreDeployment:
+      - UnitTests
+      - IntegrationTests
+      - SecurityScan:
+          Level: full
+      - DependencyCheck
+      - ComplianceCheck
+      - LoadTest:
+          Duration: 30m
+          Users: 1000
+    Deployment:
+      Strategy: BlueGreen
+      HealthCheck:
+        Path: /health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 3
+        UnhealthyThreshold: 2
+      Rollback:
+        Automatic: true
+        Triggers:
+          - ErrorRate: 5%
+          - Latency: 1000ms
+          - HealthCheck: failed
+    PostDeployment:
+      - SmokeTests
+      - E2ETests
+      - SecurityTests
+      - PerformanceTests:
+          Level: full
+      - ComplianceAudit
+
+EnvironmentPromotions:
+  IntegrationToQA:
+    Requirements:
+      - AllTestsPassing
+      - SecurityScanPassed
+      - PerformanceThresholdsMet
+      - TeamApproval
+    Automation:
+      - DatabaseMigration
+      - ConfigurationUpdate
+      - SecurityRulesUpdate
+
+  QAToProduction:
+    Requirements:
+      - AllTestsPassing
+      - SecurityScanPassed
+      - LoadTestsPassed
+      - StakeholderApproval
+      - SecurityTeamApproval
+    Automation:
+      - DatabaseMigration
+      - ConfigurationUpdate
+      - SecurityRulesUpdate
+      - BackupVerification
+      - ComplianceCheck
+
+RollbackProcedures:
+  Integration:
+    Automatic:
+      Enabled: true
+      Triggers:
+        - HealthCheckFailure
+        - ErrorRateThreshold: 10%
+    Manual:
+      Enabled: true
+      Approvers: ["DevTeam"]
+
+  QA_Staging:
+    Automatic:
+      Enabled: true
+      Triggers:
+        - HealthCheckFailure
+        - ErrorRateThreshold: 5%
+        - LatencyThreshold: 1000ms
+    Manual:
+      Enabled: true
+      Approvers: ["DevTeam", "QATeam"]
+
+  Production:
+    Automatic:
+      Enabled: true
+      Triggers:
+        - HealthCheckFailure
+        - ErrorRateThreshold: 1%
+        - LatencyThreshold: 500ms
+        - SecurityIncident
+    Manual:
+      Enabled: true
+      Approvers: ["DevOps", "SecurityTeam", "ProductOwner"]
+
+MonitoringConfig:
+  Integration:
+    Metrics:
+      Collection: basic
+      Retention: 7d
+    Alerts:
+      ErrorRate: 10%
+      Latency: 1000ms
+      CPU: 80%
+      Memory: 80%
+
+  QA_Staging:
+    Metrics:
+      Collection: enhanced
+      Retention: 14d
+    Alerts:
+      ErrorRate: 5%
+      Latency: 500ms
+      CPU: 70%
+      Memory: 70%
+
+  Production:
+    Metrics:
+      Collection: full
+      Retention: 365d
+    Alerts:
+      ErrorRate: 1%
+      Latency: 300ms
+      CPU: 60%
+      Memory: 60%
+
+SecurityConfig:
+  Integration:
+    WAF:
+      RateLimit: 100/5min
+      AllowedIPs: [DevOffices, CIServers]
+    Scanning:
+      Frequency: onDeploy
+      Level: basic
+
+  QA_Staging:
+    WAF:
+      RateLimit: 500/5min
+      AllowedIPs: [DevOffices, QAOffices, CIServers]
+    Scanning:
+      Frequency: daily
+      Level: comprehensive
+
+  Production:
+    WAF:
+      RateLimit: 2000/5min
+      GeographicRestrictions:
+        Phase1: ["US"]
+        Phase2: ["US", "GB"]
+        Phase3: ["US", "GB", "EU"]
+    Scanning:
+      Frequency: hourly
+      Level: full

@@ -1,0 +1,358 @@
+# Q-Social Detailed Environment Configurations
+
+###################
+# INT Environment #
+###################
+Integration:
+  Domain: int.be-digital-q-social
+  Purpose: Integration testing and feature validation
+  Region: us-west-2
+  
+  Infrastructure:
+    VPC:
+      CIDR: 10.1.0.0/16
+      Subnets:
+        Public: 
+          - 10.1.0.0/24
+          - 10.1.1.0/24
+        Private:
+          - 10.1.2.0/24
+          - 10.1.3.0/24
+        Database:
+          - 10.1.4.0/24
+          - 10.1.5.0/24
+
+    ECS:
+      Cluster:
+        Name: q-social-int
+        Type: FARGATE
+        MinCapacity: 1
+        MaxCapacity: 2
+        ContainerInsights: enabled
+        
+      Services:
+        Frontend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+          AutoScaling:
+            MinCount: 1
+            MaxCount: 2
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+        
+        Backend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+          AutoScaling:
+            MinCount: 1
+            MaxCount: 2
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+
+    Database:
+      Engine: Aurora PostgreSQL
+      Version: 14.6
+      Class: db.serverless
+      MinCapacity: 0.5
+      MaxCapacity: 4
+      AutoPause: true
+      PauseAfter: 30 # minutes
+      Backup:
+        RetentionPeriod: 7
+        PreferredWindow: "03:00-04:00"
+      Monitoring:
+        Enhanced: false
+        Interval: 60
+
+    WAF:
+      Enabled: true
+      RateLimit: 100/5min
+      AllowedIPs:
+        - DevTeamOffice
+        - CIServers
+      Geographic:
+        AllowedCountries: ["US"]
+        BlockResponse:
+          StatusCode: 403
+          Body: "Integration environment - Restricted Access"
+
+    Monitoring:
+      Logs:
+        RetentionDays: 14
+        DetailedMonitoring: false
+      Alerts:
+        CPU: 80
+        Memory: 80
+        ErrorRate: 5
+        Latency: 1000
+
+#######################
+# QA/Stage Environment #
+#######################
+QA_Staging:
+  Domain: qa.be-digital-q-social
+  Purpose: Quality assurance and pre-production validation
+  Region: us-west-2
+  
+  Infrastructure:
+    VPC:
+      CIDR: 10.2.0.0/16
+      Subnets:
+        Public:
+          - 10.2.0.0/24
+          - 10.2.1.0/24
+        Private:
+          - 10.2.2.0/24
+          - 10.2.3.0/24
+        Database:
+          - 10.2.4.0/24
+          - 10.2.5.0/24
+
+    ECS:
+      Cluster:
+        Name: q-social-qa
+        Type: FARGATE
+        MinCapacity: 2
+        MaxCapacity: 4
+        ContainerInsights: enabled
+        
+      Services:
+        Frontend:
+          CPU: 512
+          Memory: 1024
+          DesiredCount: 2
+          AutoScaling:
+            MinCount: 2
+            MaxCount: 4
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+        
+        Backend:
+          CPU: 512
+          Memory: 1024
+          DesiredCount: 2
+          AutoScaling:
+            MinCount: 2
+            MaxCount: 4
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+
+    Database:
+      Engine: Aurora PostgreSQL
+      Version: 14.6
+      Class: db.serverless
+      MinCapacity: 1
+      MaxCapacity: 8
+      AutoPause: false
+      Backup:
+        RetentionPeriod: 14
+        PreferredWindow: "03:00-04:00"
+      Monitoring:
+        Enhanced: true
+        Interval: 30
+
+    WAF:
+      Enabled: true
+      RateLimit: 500/5min
+      AllowedIPs:
+        - QATeamOffice
+        - CIServers
+        - ClientTestIPs
+      Geographic:
+        AllowedCountries: ["US", "GB"]
+        BlockResponse:
+          StatusCode: 403
+          Body: "QA/Staging environment - Restricted Access"
+
+    Monitoring:
+      Logs:
+        RetentionDays: 30
+        DetailedMonitoring: true
+      Alerts:
+        CPU: 75
+        Memory: 75
+        ErrorRate: 2
+        Latency: 500
+
+######################
+# PROD Environment #
+######################
+Production:
+  Domain: be-digital-q-social
+  Purpose: Production environment for end users
+  Region: us-west-2
+  
+  Infrastructure:
+    VPC:
+      CIDR: 10.3.0.0/16
+      Subnets:
+        Public:
+          - 10.3.0.0/24
+          - 10.3.1.0/24
+          - 10.3.2.0/24
+        Private:
+          - 10.3.3.0/24
+          - 10.3.4.0/24
+          - 10.3.5.0/24
+        Database:
+          - 10.3.6.0/24
+          - 10.3.7.0/24
+          - 10.3.8.0/24
+
+    ECS:
+      Cluster:
+        Name: q-social-prod
+        Type: FARGATE
+        MinCapacity: 3
+        MaxCapacity: 20
+        ContainerInsights: enabled
+        
+      Services:
+        Frontend:
+          CPU: 1024
+          Memory: 2048
+          DesiredCount: 3
+          AutoScaling:
+            MinCount: 3
+            MaxCount: 20
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+          DeploymentConfiguration:
+            MaximumPercent: 200
+            MinimumHealthyPercent: 100
+        
+        Backend:
+          CPU: 1024
+          Memory: 2048
+          DesiredCount: 3
+          AutoScaling:
+            MinCount: 3
+            MaxCount: 20
+            TargetCPUUtilization: 70
+            TargetMemoryUtilization: 70
+          DeploymentConfiguration:
+            MaximumPercent: 200
+            MinimumHealthyPercent: 100
+
+    Database:
+      Engine: Aurora PostgreSQL
+      Version: 14.6
+      Class: db.serverless
+      MinCapacity: 2
+      MaxCapacity: 32
+      AutoPause: false
+      MultiAZ: true
+      Backup:
+        RetentionPeriod: 35
+        PreferredWindow: "03:00-04:00"
+        CrossRegionCopy: true
+      Monitoring:
+        Enhanced: true
+        Interval: 1
+
+    WAF:
+      Enabled: true
+      RateLimit:
+        Default: 2000/5min
+        API: 1000/5min
+        Auth: 100/5min
+      Geographic:
+        Phase1:
+          AllowedCountries: ["US"]
+          Duration: "Months 0-3"
+        Phase2:
+          AllowedCountries: ["US", "GB"]
+          Duration: "Months 4-6"
+        Phase3:
+          AllowedCountries: ["US", "GB", "EU"]
+          Duration: "Months 7-9"
+      Rules:
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 2
+        - Name: AWSManagedRulesATPRuleSet
+          Priority: 3
+        - Name: RateBasedRule
+          Priority: 4
+        - Name: GeoMatchRule
+          Priority: 5
+
+    Security:
+      SSL:
+        Provider: ACM
+        Type: Wildcard
+        Domain: "*.be-digital-q-social"
+        ValidationMethod: DNS
+      
+      SecurityHeaders:
+        HSTS:
+          Enabled: true
+          MaxAge: 31536000
+          IncludeSubdomains: true
+          Preload: true
+        CSP:
+          DefaultSrc: "'self'"
+          ScriptSrc: "'self' 'unsafe-inline'"
+          StyleSrc: "'self' 'unsafe-inline'"
+          ImgSrc: "'self' data: https:"
+          ConnectSrc: "'self' https://api.be-digital-q-social"
+        
+      WAFRules:
+        RateLimiting:
+          Enabled: true
+          Limit: 2000
+          Period: 300
+        SQLInjection:
+          Enabled: true
+          Action: BLOCK
+        XSS:
+          Enabled: true
+          Action: BLOCK
+        
+    Monitoring:
+      Logs:
+        RetentionDays: 365
+        DetailedMonitoring: true
+        Encryption: true
+      
+      Alerts:
+        HighPriority:
+          CPU: 80
+          Memory: 80
+          ErrorRate: 1
+          Latency: 300
+          Notification: ["OpsTeam", "DevTeam"]
+        
+        MediumPriority:
+          CPU: 70
+          Memory: 70
+          ErrorRate: 0.5
+          Latency: 200
+          Notification: ["DevTeam"]
+        
+        LowPriority:
+          CPU: 60
+          Memory: 60
+          ErrorRate: 0.1
+          Latency: 100
+          Notification: ["DevTeam"]
+
+    Compliance:
+      Logging:
+        APIAccess: true
+        UserActions: true
+        AdminActions: true
+        SecurityEvents: true
+      
+      Auditing:
+        Enabled: true
+        RetentionPeriod: 365
+        EncryptionEnabled: true
+      
+      DataProtection:
+        AtRest: true
+        InTransit: true
+        Backups: true

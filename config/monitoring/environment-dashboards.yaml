@@ -1,0 +1,200 @@
+# Q-Social Environment-Specific Monitoring Dashboards
+
+Integration:
+  DashboardName: Q-Social-INT-Overview
+  RefreshRate: 60
+  Widgets:
+    ApplicationHealth:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - Service: Frontend
+            Metrics: [CPU, Memory, ErrorRate]
+          - Service: Backend
+            Metrics: [CPU, Memory, ErrorRate]
+        Period: 300
+        Stat: Average
+
+    SecurityMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - WAFBlocks
+          - UnauthorizedAccess
+          - FailedLogins
+        Period: 300
+        Stat: Sum
+
+    APIMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - Latency
+          - RequestCount
+          - ErrorCount
+        Period: 60
+        Stat: Average
+
+QA_Staging:
+  DashboardName: Q-Social-QA-Overview
+  RefreshRate: 30
+  Widgets:
+    ApplicationHealth:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - Service: Frontend
+            Metrics: [CPU, Memory, ErrorRate, ResponseTime]
+          - Service: Backend
+            Metrics: [CPU, Memory, ErrorRate, ResponseTime]
+        Period: 300
+        Stat: Average
+
+    DatabaseMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - ConnectionCount
+          - ReadIOPS
+          - WriteIOPS
+          - Latency
+        Period: 300
+        Stat: Average
+
+    SecurityMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - WAFBlocks
+          - UnauthorizedAccess
+          - FailedLogins
+          - GeographicBlocks
+        Period: 300
+        Stat: Sum
+
+    LoadTestMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - ConcurrentUsers
+          - ResponseTime
+          - ErrorRate
+          - Throughput
+        Period: 60
+        Stat: Average
+
+Production:
+  DashboardName: Q-Social-PROD-Overview
+  RefreshRate: 30
+  Widgets:
+    ApplicationHealth:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - Service: Frontend
+            Metrics: [CPU, Memory, ErrorRate, ResponseTime, SLO]
+          - Service: Backend
+            Metrics: [CPU, Memory, ErrorRate, ResponseTime, SLO]
+        Period: 300
+        Stat: Average
+
+    GeographicAccess:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - RequestsByCountry
+          - BlocksByCountry
+          - LatencyByRegion
+        Period: 300
+        Stat: Average
+
+    BusinessMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - ActiveUsers
+          - UserEngagement
+          - ErrorImpact
+          - UserSatisfaction
+        Period: 300
+        Stat: Average
+
+    SecurityMetrics:
+      Type: metric
+      Width: 12
+      Height: 6
+      Properties:
+        Metrics:
+          - WAFBlocks
+          - UnauthorizedAccess
+          - FailedLogins
+          - GeographicBlocks
+          - SecurityIncidents
+        Period: 300
+        Stat: Sum
+
+Alerts:
+  Integration:
+    HighPriority:
+      - Metric: ErrorRate
+        Threshold: 10%
+        Period: 300
+        Actions: [DevTeam]
+      - Metric: APILatency
+        Threshold: 1000ms
+        Period: 300
+        Actions: [DevTeam]
+
+  QA_Staging:
+    HighPriority:
+      - Metric: ErrorRate
+        Threshold: 5%
+        Period: 300
+        Actions: [DevTeam, QATeam]
+      - Metric: APILatency
+        Threshold: 500ms
+        Period: 300
+        Actions: [DevTeam, QATeam]
+      - Metric: SecurityIncident
+        Threshold: 1
+        Period: 300
+        Actions: [DevTeam, SecurityTeam]
+
+  Production:
+    HighPriority:
+      - Metric: ErrorRate
+        Threshold: 1%
+        Period: 300
+        Actions: [DevTeam, OpsTeam, Management]
+      - Metric: APILatency
+        Threshold: 300ms
+        Period: 300
+        Actions: [DevTeam, OpsTeam]
+      - Metric: SecurityIncident
+        Threshold: 1
+        Period: 300
+        Actions: [DevTeam, SecurityTeam, Management]
+      - Metric: GeographicBlock
+        Threshold: 1000
+        Period: 300
+        Actions: [SecurityTeam]

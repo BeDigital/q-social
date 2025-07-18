@@ -1,0 +1,195 @@
+# Q-Social Environment Configurations
+
+Production:
+  Domain: be-digital-q-social
+  Region: us-west-2
+  Infrastructure:
+    ECS:
+      Cluster:
+        Name: q-social-prod
+        MinCapacity: 2
+        MaxCapacity: 10
+        ContainerInsights: enabled
+        AutoScaling:
+          TargetCPUUtilization: 70
+          TargetMemoryUtilization: 70
+          ScaleInCooldown: 300
+          ScaleOutCooldown: 60
+      
+      Services:
+        Frontend:
+          CPU: 1024
+          Memory: 2048
+          DesiredCount: 2
+          HealthCheckGracePeriod: 60
+          DeploymentConfiguration:
+            MaximumPercent: 200
+            MinimumHealthyPercent: 100
+        
+        Backend:
+          CPU: 1024
+          Memory: 2048
+          DesiredCount: 2
+          HealthCheckGracePeriod: 60
+          DeploymentConfiguration:
+            MaximumPercent: 200
+            MinimumHealthyPercent: 100
+    
+    Database:
+      Type: Aurora Serverless v2
+      Engine: PostgreSQL 14.6
+      MinCapacity: 2
+      MaxCapacity: 32
+      AutoPause: disabled
+      BackupRetention: 35
+      MultiAZ: true
+      PerformanceInsights: enabled
+      Monitoring:
+        Enhanced: true
+        Interval: 1
+    
+    Cache:
+      Type: Redis
+      Engine: 6.x
+      NodeType: cache.r6g.large
+      NumShards: 2
+      ReplicasPerShard: 1
+      AutoFailover: enabled
+      MultiAZ: true
+    
+    WAF:
+      RateLimit:
+        Default: 2000/5min
+        API: 1000/5min
+        Auth: 100/5min
+      Geographic:
+        Phase1:
+          AllowedCountries: ["US"]
+          Duration: "Months 0-3"
+        Phase2:
+          AllowedCountries: ["US", "GB"]
+          Duration: "Months 4-6"
+        Phase3:
+          AllowedCountries: ["US", "GB", "EU"]
+          Duration: "Months 7-9"
+
+Staging:
+  Domain: staging.be-digital-q-social
+  Region: us-west-2
+  Infrastructure:
+    ECS:
+      Cluster:
+        Name: q-social-staging
+        MinCapacity: 1
+        MaxCapacity: 4
+        ContainerInsights: enabled
+        AutoScaling:
+          TargetCPUUtilization: 70
+          TargetMemoryUtilization: 70
+      
+      Services:
+        Frontend:
+          CPU: 512
+          Memory: 1024
+          DesiredCount: 1
+          HealthCheckGracePeriod: 30
+        
+        Backend:
+          CPU: 512
+          Memory: 1024
+          DesiredCount: 1
+          HealthCheckGracePeriod: 30
+    
+    Database:
+      Type: Aurora Serverless v2
+      Engine: PostgreSQL 14.6
+      MinCapacity: 1
+      MaxCapacity: 8
+      AutoPause: enabled
+      PauseAfter: 1800
+      BackupRetention: 7
+      MultiAZ: false
+    
+    Cache:
+      Type: Redis
+      Engine: 6.x
+      NodeType: cache.t4g.medium
+      NumShards: 1
+      ReplicasPerShard: 0
+      AutoFailover: disabled
+
+QA:
+  Domain: qa.be-digital-q-social
+  Region: us-west-2
+  Infrastructure:
+    ECS:
+      Cluster:
+        Name: q-social-qa
+        MinCapacity: 1
+        MaxCapacity: 2
+        ContainerInsights: enabled
+      
+      Services:
+        Frontend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+        
+        Backend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+    
+    Database:
+      Type: Aurora Serverless v2
+      Engine: PostgreSQL 14.6
+      MinCapacity: 0.5
+      MaxCapacity: 4
+      AutoPause: enabled
+      PauseAfter: 1800
+      BackupRetention: 3
+    
+    Cache:
+      Type: Redis
+      Engine: 6.x
+      NodeType: cache.t4g.micro
+      NumShards: 1
+      ReplicasPerShard: 0
+
+Development:
+  Domain: dev.be-digital-q-social
+  Region: us-west-2
+  Infrastructure:
+    ECS:
+      Cluster:
+        Name: q-social-dev
+        MinCapacity: 1
+        MaxCapacity: 1
+        ContainerInsights: enabled
+      
+      Services:
+        Frontend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+        
+        Backend:
+          CPU: 256
+          Memory: 512
+          DesiredCount: 1
+    
+    Database:
+      Type: Aurora Serverless v2
+      Engine: PostgreSQL 14.6
+      MinCapacity: 0.5
+      MaxCapacity: 2
+      AutoPause: enabled
+      PauseAfter: 900
+      BackupRetention: 1
+    
+    Cache:
+      Type: Redis
+      Engine: 6.x
+      NodeType: cache.t4g.micro
+      NumShards: 1
+      ReplicasPerShard: 0

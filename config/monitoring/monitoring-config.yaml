@@ -1,0 +1,242 @@
+# Q-Social Monitoring and Alerting Configuration
+
+Dashboards:
+  Infrastructure:
+    Name: Q-Social-Infrastructure
+    RefreshRate: 60
+    Widgets:
+      - Title: ECS Service Status
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - CPUUtilization
+          - MemoryUtilization
+          - RunningTaskCount
+          - PendingTaskCount
+      
+      - Title: Database Metrics
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - DatabaseConnections
+          - FreeableMemory
+          - WriteIOPS
+          - ReadIOPS
+      
+      - Title: Cache Performance
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - CacheHits
+          - CacheMisses
+          - Evictions
+          - CPUUtilization
+
+  Security:
+    Name: Q-Social-Security
+    RefreshRate: 60
+    Widgets:
+      - Title: WAF Metrics
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - BlockedRequests
+          - AllowedRequests
+          - RateLimit
+      
+      - Title: Geographic Access
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - RequestsByCountry
+          - BlockedByCountry
+      
+      - Title: SSL/TLS Metrics
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - TLSNegotiationErrors
+          - ClientTLSNegotiationErrorCount
+
+  Application:
+    Name: Q-Social-Application
+    RefreshRate: 30
+    Widgets:
+      - Title: API Performance
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - Latency
+          - RequestCount
+          - ErrorCount
+          - 5XXError
+      
+      - Title: User Activity
+        Type: metric
+        Region: us-west-2
+        Metrics:
+          - ActiveUsers
+          - SessionCount
+          - AuthenticationSuccess
+          - AuthenticationFailure
+
+Alerts:
+  Infrastructure:
+    HighCPU:
+      Metric: CPUUtilization
+      Threshold: 80
+      Period: 300
+      EvaluationPeriods: 2
+      Statistic: Average
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: missing
+      Actions:
+        - SNS:DevOps
+        - Slack:DevOps
+    
+    HighMemory:
+      Metric: MemoryUtilization
+      Threshold: 80
+      Period: 300
+      EvaluationPeriods: 2
+      Statistic: Average
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: missing
+      Actions:
+        - SNS:DevOps
+        - Slack:DevOps
+    
+    DatabaseConnections:
+      Metric: DatabaseConnections
+      Threshold: 80
+      Period: 300
+      EvaluationPeriods: 2
+      Statistic: Average
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:DevOps
+        - Slack:DevOps
+
+  Security:
+    WAFBlocks:
+      Metric: BlockedRequests
+      Threshold: 1000
+      Period: 300
+      EvaluationPeriods: 1
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:Security
+        - Slack:Security
+    
+    UnauthorizedAccess:
+      Metric: UnauthorizedAPIRequests
+      Threshold: 100
+      Period: 300
+      EvaluationPeriods: 1
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:Security
+        - Slack:Security
+    
+    GeographicViolation:
+      Metric: BlockedByCountry
+      Threshold: 100
+      Period: 300
+      EvaluationPeriods: 1
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:Security
+        - Slack:Security
+
+  Application:
+    APILatency:
+      Metric: Latency
+      Threshold: 1000
+      Period: 300
+      EvaluationPeriods: 3
+      Statistic: Average
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:DevOps
+        - Slack:DevOps
+    
+    ErrorRate:
+      Metric: ErrorCount
+      Threshold: 50
+      Period: 300
+      EvaluationPeriods: 2
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:DevOps
+        - Slack:DevOps
+    
+    AuthenticationFailures:
+      Metric: AuthenticationFailure
+      Threshold: 100
+      Period: 300
+      EvaluationPeriods: 1
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Actions:
+        - SNS:Security
+        - Slack:Security
+
+LogGroups:
+  Application:
+    Name: /aws/q-social/application
+    RetentionDays: 30
+    Filters:
+      - Name: errors
+        Pattern: "[timestamp, level=ERROR, ...]"
+        MetricName: ApplicationErrors
+      - Name: warnings
+        Pattern: "[timestamp, level=WARN, ...]"
+        MetricName: ApplicationWarnings
+  
+  Access:
+    Name: /aws/q-social/access
+    RetentionDays: 90
+    Filters:
+      - Name: 4xx-errors
+        Pattern: "[timestamp, status=4*, ...]"
+        MetricName: ClientErrors
+      - Name: 5xx-errors
+        Pattern: "[timestamp, status=5*, ...]"
+        MetricName: ServerErrors
+  
+  Security:
+    Name: /aws/q-social/security
+    RetentionDays: 365
+    Filters:
+      - Name: auth-failures
+        Pattern: "[timestamp, event=AuthFailure, ...]"
+        MetricName: AuthenticationFailures
+      - Name: waf-blocks
+        Pattern: "[timestamp, action=BLOCK, ...]"
+        MetricName: WAFBlocks
+
+Metrics:
+  Custom:
+    UserActivity:
+      Namespace: Q-Social/Users
+      Metrics:
+        - Name: ActiveUsers
+          Unit: Count
+          StorageResolution: 60
+        - Name: SessionDuration
+          Unit: Seconds
+          StorageResolution: 60
+    
+    BusinessMetrics:
+      Namespace: Q-Social/Business
+      Metrics:
+        - Name: NewUsers
+          Unit: Count
+          StorageResolution: 300
+        - Name: UserRetention
+          Unit: Percent
+          StorageResolution: 3600
